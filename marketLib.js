@@ -1,16 +1,15 @@
 /**
  * marketLib.js - Simple library for fetching and displaying app marketplaces
  */
-
 (function(window) {
     'use strict';
     
     /**
-     * Fetch JSON from URL and render app cards into .apps container
-     * @param {string} url - URL to fetch JSON from (can be relative or absolute)
+     * Fetch JSON from URL or use provided data object, then render app cards
+     * @param {string|Object} source - URL string or data object with apps
      * @param {string} container - CSS selector for container (default: '.apps')
      */
-    window.mpFetch = async function(url, container = '.apps') {
+    window.mpFetch = async function(source, container = '.apps') {
         const containerEl = document.querySelector(container);
         
         if (!containerEl) {
@@ -18,23 +17,33 @@
             return;
         }
         
-        // Add https:// if not present
-        if (!url.startsWith('http')) {
-            url = 'https://' + url;
-        }
-        
         try {
-            // Show loading state
-            containerEl.innerHTML = '<p>Loading apps...</p>';
+            let data;
             
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            // Check if source is an object (data) or string (URL)
+            if (typeof source === 'object' && source !== null) {
+                // Direct data object
+                data = source;
+            } else if (typeof source === 'string') {
+                // URL - fetch it
+                containerEl.innerHTML = '<p>Loading apps...</p>';
+                
+                let url = source;
+                if (!url.startsWith('http')) {
+                    url = 'https://' + url;
+                }
+                
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                data = await response.json();
+            } else {
+                throw new Error('Source must be a URL string or data object');
             }
             
-            const data = await response.json();
-            
-            // Clear loading state
+            // Clear container
             containerEl.innerHTML = '';
             
             // Add title
